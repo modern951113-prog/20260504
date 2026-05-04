@@ -49,11 +49,16 @@ function videoReady() {
 
 function modelReady() {
   console.log("FaceMesh Model ready!");
-  // 設定一個監聽器，當偵測到臉部時，會執行回呼函式
-  facemesh.on("face", results => {
-    // 將偵測結果儲存到 predictions 陣列
-    predictions = results;
-  });
+  if (facemesh) { // 確保 facemesh 物件已成功載入
+    // 設定一個監聽器，當偵測到臉部時，會執行回呼函式
+    facemesh.on("face", results => {
+      // 將偵測結果儲存到 predictions 陣列
+      predictions = results;
+    });
+  } else {
+    console.error("ml5.faceMesh 模型載入失敗。這可能是因為您的裝置或瀏覽器不支援 WebGL/WebGPU。");
+    console.error("請確保您的瀏覽器是最新版本，並且您的裝置支援 WebGL (例如：Chrome, Firefox, Edge)。");
+  }
 }
 
 function draw() {
@@ -69,7 +74,7 @@ function draw() {
   }
 
   // 在攝影機準備好之前，先不要執行後續的繪圖程式碼
-  if (!capture || capture.width === 0) {
+  if (!capture || !capture.elt || capture.elt.videoWidth === 0 || capture.elt.videoHeight === 0) {
     return;
   }
 
@@ -119,9 +124,17 @@ function draw() {
   pg.image(capture, 0, 0, videoWidth, videoHeight);
   pg.pop();
 
-  // 計算從攝影機原始尺寸到 pg 顯示尺寸的縮放比例
-  const scaleFactorX = videoWidth / nativeVideoWidth;
-  const scaleFactorY = videoHeight / nativeVideoHeight;
+  // 根據影像是否旋轉，計算正確的縮放比例
+  let scaleFactorX, scaleFactorY;
+  if (isVideoEffectivelyRotated) {
+    // 如果影像被旋轉了，來源的寬高要對調來計算縮放比例
+    scaleFactorX = videoWidth / nativeVideoHeight;
+    scaleFactorY = videoHeight / nativeVideoWidth;
+  } else {
+    // 如果影像沒有旋轉，正常計算縮放比例
+    scaleFactorX = videoWidth / nativeVideoWidth;
+    scaleFactorY = videoHeight / nativeVideoHeight;
+  }
 
   // 2. 在 maskGraphics 上繪製臉部輪廓作為遮罩
   maskGraphics.clear();
@@ -140,7 +153,7 @@ function draw() {
   // 5. 在臉部外層輪廓上繪製光暈效果
   push();
   translate(x, y); // 將繪圖原點移動到影像顯示的左上角
-  drawGlowingFaceContour(videoWidth, videoHeight);
+  drawGlowingFaceContour(videoWidth, videoHeight, scaleFactorX, scaleFactorY, isVideoEffectivelyRotated, rotationAngleDegrees, nativeVideoWidth, nativeVideoHeight);
   pop();
 }
 
