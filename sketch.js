@@ -6,10 +6,20 @@ let facemesh;
 let predictions = []; // 儲存臉部偵測結果的陣列
 
 // 根據要求，定義要連接的臉部關鍵點索引
-// 新增：右眼外圈（眉毛）的關鍵點索引 (包含 247)
+// 臉部外輪廓
+const faceOutlineIndices = [
+  409, 270, 269, 267, 0, 37, 39, 40, 185, 61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291
+];
+
+// 下顎線
+const jawlineIndices = [
+  76, 77, 90, 180, 85, 16, 315, 404, 320, 307, 306, 408, 304, 303, 302, 11, 72, 73, 74, 184
+];
+
+// 右眼外圈 (眉毛 + 臉頰點 247)
 const rightEyebrowIndices = [ 70, 63, 105, 66, 107, 55, 65, 52, 53, 46, 247 ];
 
-// 新增：右眼內圈（眼眶）的關鍵點索引 (包含 246)
+// 右眼內圈 (眼眶)
 const rightEyeOutlineIndices = [ 33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246 ];
 
 function setup() {
@@ -70,6 +80,11 @@ function draw() {
 }
 
 function drawFaceKeypoints(vWidth, vHeight) {
+  // 保護措施：確保在攝影機準備好（寬度不為0）且有偵測到臉部時才進行繪製
+  if (predictions.length === 0 || capture.width === 0) {
+    return;
+  }
+
   // 遍歷所有偵測到的臉部 (通常只有一個)
   for (let i = 0; i < predictions.length; i++) {
     const keypoints = predictions[i].scaledMesh;
@@ -79,8 +94,29 @@ function drawFaceKeypoints(vWidth, vHeight) {
     const scaleY = vHeight / capture.height;
 
     // 設定線條樣式
-    strokeWeight(2); // 讓線條粗一點比較清楚
+    stroke(255, 0, 0); // 紅色
+    strokeWeight(2); // 將所有線條加粗，方便觀察
     noFill(); // 我們只畫線，不填滿
+
+    // 繪製臉部外輪廓
+    beginShape();
+    for (let j = 0; j < faceOutlineIndices.length; j++) {
+      const index = faceOutlineIndices[j];
+      const [px, py] = keypoints[index];
+      vertex(px * scaleX, py * scaleY);
+    }
+    endShape(CLOSE); // 閉合圖形
+
+    // 繪製下顎線
+    beginShape();
+    for (let j = 0; j < jawlineIndices.length; j++) {
+      const index = jawlineIndices[j];
+      const [px, py] = keypoints[index];
+      vertex(px * scaleX, py * scaleY);
+    }
+    endShape(); // 不閉合
+
+    // --- 繪製右眼 ---
 
     // 繪製右眼外圈 (眉毛) - 綠色
     stroke(0, 255, 0);
