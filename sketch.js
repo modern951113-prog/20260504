@@ -15,12 +15,17 @@ const faceOutlineIndices = [
 const jawlineIndices = [
   76, 77, 90, 180, 85, 16, 315, 404, 320, 307, 306, 408, 304, 303, 302, 11, 72, 73, 74, 184
 ];
-
 // 右眼外圈 (眉毛 + 臉頰點 247)
 const rightEyebrowIndices = [ 70, 63, 105, 66, 107, 55, 65, 52, 53, 46, 247 ];
 
 // 右眼內圈 (眼眶)
 const rightEyeOutlineIndices = [ 33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246 ];
+
+// 左眼外圈 (眉毛 + 臉頰點 467)
+const leftEyebrowIndices = [ 300, 293, 334, 296, 336, 285, 295, 282, 283, 276, 467 ];
+
+// 左眼內圈 (眼眶)
+const leftEyeOutlineIndices = [ 263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466 ];
 
 function setup() {
   // 建立一個全螢幕的畫布
@@ -95,7 +100,7 @@ function drawFaceKeypoints(vWidth, vHeight) {
 
     // 設定線條樣式
     stroke(255, 0, 0); // 紅色
-    strokeWeight(2); // 將所有線條加粗，方便觀察
+    strokeWeight(1);
     noFill(); // 我們只畫線，不填滿
 
     // 繪製臉部外輪廓
@@ -117,7 +122,7 @@ function drawFaceKeypoints(vWidth, vHeight) {
     endShape(); // 不閉合
 
     // --- 繪製右眼 ---
-
+    strokeWeight(2); // 讓眼睛線條粗一點比較清楚
     // 繪製右眼外圈 (眉毛) - 綠色
     stroke(0, 255, 0);
     beginShape();
@@ -133,6 +138,28 @@ function drawFaceKeypoints(vWidth, vHeight) {
     beginShape();
     for (let j = 0; j < rightEyeOutlineIndices.length; j++) {
       const index = rightEyeOutlineIndices[j];
+      const [px, py] = keypoints[index];
+      vertex(px * scaleX, py * scaleY);
+    }
+    endShape(CLOSE); // 眼眶要閉合
+
+    // --- 繪製左眼 ---
+
+    // 繪製左眼外圈 (眉毛) - 綠色
+    stroke(0, 255, 0);
+    beginShape();
+    for (let j = 0; j < leftEyebrowIndices.length; j++) {
+      const index = leftEyebrowIndices[j];
+      const [px, py] = keypoints[index];
+      vertex(px * scaleX, py * scaleY);
+    }
+    endShape(); // 眉毛不用閉合
+
+    // 繪製左眼內圈 (眼眶) - 藍色
+    stroke(0, 0, 255);
+    beginShape();
+    for (let j = 0; j < leftEyeOutlineIndices.length; j++) {
+      const index = leftEyeOutlineIndices[j];
       const [px, py] = keypoints[index];
       vertex(px * scaleX, py * scaleY);
     }
