@@ -6,14 +6,11 @@ let facemesh;
 let predictions = []; // 儲存臉部偵測結果的陣列
 
 // 根據要求，定義要連接的臉部關鍵點索引
-// 臉部外輪廓
-const faceOutlineIndices = [
-  409, 270, 269, 267, 0, 37, 39, 40, 185, 61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291
-];
-
-// 下顎線
-const jawlineIndices = [
-  76, 77, 90, 180, 85, 16, 315, 404, 320, 307, 306, 408, 304, 303, 302, 11, 72, 73, 74, 184
+// 臉部外輪廓 (使用 MediaPipe 官方的 Face Oval 索引，這會畫出一個完整的臉部橢圓)
+const faceOvalIndices = [
+  10,  338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288,
+  397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136,
+  172, 58,  132, 93,  234, 127, 162, 21,  54,  103, 67,  109
 ];
 // 右眼外圈 (眉毛 + 臉頰點 247)
 const rightEyebrowIndices = [ 70, 63, 105, 66, 107, 55, 65, 52, 53, 46, 247 ];
@@ -39,13 +36,13 @@ function setup() {
 
 function videoReady() {
   // 當攝影機準備好後，載入 facemesh 模型
-  facemesh = ml5.facemesh(capture, modelReady);
+  facemesh = ml5.faceMesh(capture, modelReady);
 }
 
 function modelReady() {
   console.log("FaceMesh Model ready!");
   // 設定一個監聽器，當偵測到臉部時，會執行回呼函式
-  facemesh.on("predict", results => {
+  facemesh.on("face", results => {
     // 將偵測結果儲存到 predictions 陣列
     predictions = results;
   });
@@ -54,6 +51,11 @@ function modelReady() {
 function draw() {
   // 設定畫布背景顏色
   background('#e7c6ff');
+
+  // 在攝影機準備好之前，先不要執行後續的繪圖程式碼
+  if (!capture || capture.width === 0) {
+    return;
+  }
 
   // 計算影像要顯示的寬度和高度 (全螢幕的 50%)
   const videoWidth = width * 0.5;
@@ -100,26 +102,17 @@ function drawFaceKeypoints(vWidth, vHeight) {
 
     // 設定線條樣式
     stroke(255, 0, 0); // 紅色
-    strokeWeight(1);
+    strokeWeight(2); // 將線條加粗，確保不是因為太細而看不見
     noFill(); // 我們只畫線，不填滿
 
-    // 繪製臉部外輪廓
+    // 繪製臉部外輪廓 (Face Oval)
     beginShape();
-    for (let j = 0; j < faceOutlineIndices.length; j++) {
-      const index = faceOutlineIndices[j];
+    for (let j = 0; j < faceOvalIndices.length; j++) {
+      const index = faceOvalIndices[j];
       const [px, py] = keypoints[index];
       vertex(px * scaleX, py * scaleY);
     }
-    endShape(CLOSE); // 閉合圖形
-
-    // 繪製下顎線
-    beginShape();
-    for (let j = 0; j < jawlineIndices.length; j++) {
-      const index = jawlineIndices[j];
-      const [px, py] = keypoints[index];
-      vertex(px * scaleX, py * scaleY);
-    }
-    endShape(); // 不閉合
+    endShape(CLOSE); // 閉合圖形，形成完整的橢圓輪廓
 
     // --- 繪製右眼 ---
     strokeWeight(2); // 讓眼睛線條粗一點比較清楚
